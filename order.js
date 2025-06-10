@@ -27,15 +27,17 @@ class OrderManager {
         this.init();
     }
 
-    init() {
-        this.loadProducts();
-        this.setupEventListeners();
-        this.setInitialCategory();
-        this.renderCategories();
-        this.renderProducts();
-        this.updateOrderDetails();
-        this.syncWithProductManager();
-    }
+async init() {
+    await this.loadProducts();
+    await this.loadNextOrderNumber(); 
+    this.setupEventListeners();
+    this.setInitialCategory();
+    this.renderCategories();
+    this.renderProducts();
+    this.updateOrderDetails();
+    this.syncWithProductManager();
+}
+
 
     // NEW: Set initial category to one that has products
     setInitialCategory() {
@@ -57,24 +59,48 @@ class OrderManager {
         }
     }
 
-    loadProducts() {
-        this.products = [];
+async loadProducts() {
+    try {
+        const response = await fetch('api/products.php');
+        const result = await response.json();
         
-        if (window.productManager && window.productManager.products) {
-            this.products = window.productManager.products.map(product => ({
+        if (response.ok) {
+            // Store previous stock levels for comparison
+            const previousProducts = new Map(this.products.map(p => [p.id, p.stock]));
+            
+            this.products = result.products.map(product => ({
                 id: product.id,
                 name: product.name,
                 category: product.category,
-                price: product.price,
-                stock: product.stock, // Include stock for availability checking
+                price: parseFloat(product.price),
+                stock: parseInt(product.stock),
                 image: product.image || null
             }));
+            
+            // Check for stock changes
+            this.products.forEach(product => {
+                const previousStock = previousProducts.get(product.id);
+                if (previousStock !== undefined && previousStock !== product.stock) {
+                    console.log(`📦 Stock changed: ${product.name} | ${previousStock} → ${product.stock}`);
+                    
+                    if (product.stock === 0) {
+                        console.log(`🚨 ${product.name} is now OUT OF STOCK`);
+                    } else if (product.stock <= 5 && previousStock > 5) {
+                        console.log(`⚠️ ${product.name} is now LOW STOCK`);
+                    }
+                }
+            });
+            
             console.log(`📦 Loaded ${this.products.length} products for order catalog`);
         } else {
-            console.log('⚠️ ProductManager not found or no products available');
+            console.error('Failed to load products:', result.error);
+            this.products = [];
         }
+    } catch (error) {
+        console.error('Error loading products:', error);
+        this.products = [];
     }
-
+}
     syncWithProductManager() {
         // Listen for product updates
         document.addEventListener('productsUpdated', (event) => {
@@ -402,11 +428,17 @@ class OrderManager {
         this.updateOrderDetails();
     }
 
-    updateOrderDetails() {
-        this.updateOrderItems();
-        this.updateOrderSummary();
-        this.updateContinueButton();
+updateOrderDetails() {
+    this.updateOrderItems();
+    this.updateOrderSummary();
+    this.updateContinueButton();
+    
+    // Update order number display
+    const orderNumberElement = document.querySelector('.order-number');
+    if (orderNumberElement) {
+        orderNumberElement.textContent = `Orders #${this.currentOrderNumber}`;
     }
+}
 
     updateOrderItems() {
         const container = document.getElementById('orderItems');
@@ -505,29 +537,35 @@ class OrderManager {
         this.showNotification('Calculator cleared!');
     }
 
-    calculateChange() {
-        const total = this.getCalculatedTotal();
-        const change = this.cashReceived - total;
-        
-        const changeInput = document.getElementById('orderChangeInput');
-        if (changeInput) {
-            if (this.cashReceived > 0) {
-                changeInput.value = Math.abs(change).toFixed(2);
-                
-                if (change < 0) {
-                    changeInput.classList.add('negative');
-                    changeInput.placeholder = `Need ₱${Math.abs(change).toFixed(2)} more`;
-                } else {
-                    changeInput.classList.remove('negative');
-                    changeInput.placeholder = '₱ 0';
-                }
+calculateChange() {
+    const total = this.getCalculatedTotal();
+    const change = this.cashReceived - total;
+    
+    const changeInput = document.getElementById('orderChangeInput');
+    if (changeInput) {
+        if (this.cashReceived > 0) {
+            changeInput.value = Math.abs(change).toFixed(2);
+            
+            if (change < 0) {
+                changeInput.classList.add('negative');
+                changeInput.style.color = '#dc2626';
+                changeInput.style.fontWeight = 'bold';
+                changeInput.placeholder = `Need ₱${Math.abs(change).toFixed(2)} more`;
             } else {
-                changeInput.value = '';
-                changeInput.placeholder = '₱ 0';
                 changeInput.classList.remove('negative');
+                changeInput.style.color = '#059669';
+                changeInput.style.fontWeight = 'bold';
+                changeInput.placeholder = '₱ 0';
             }
+        } else {
+            changeInput.value = '';
+            changeInput.style.color = '#6b7280';
+            changeInput.style.fontWeight = 'normal';
+            changeInput.placeholder = '₱ 0';
+            changeInput.classList.remove('negative');
         }
     }
+}
 
     getCalculatedSubtotal() {
         return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -566,28 +604,45 @@ class OrderManager {
         this.updateDashboardStats(total);
     }
 
-    updateContinueButton() {
-        const btn = document.getElementById('continueToPayment');
-        if (!btn) return;
+updateContinueButton() {
+    const btn = document.getElementById('continueToPayment');
+    if (!btn) return;
 
-        if (this.cart.length === 0) {
-            btn.disabled = true;
-            btn.className = 'continue-btn';
-            btn.innerHTML = '<ion-icon name="bag-outline"></ion-icon> Add items to continue';
-        } else {
-            const total = this.getCalculatedTotal();
-            
-            if (this.cashReceived >= total && total > 0) {
-                btn.disabled = false;
-                btn.className = 'continue-btn complete-order';
-                btn.innerHTML = '<ion-icon name="checkmark-outline"></ion-icon> Complete Order';
-            } else {
-                btn.disabled = false;
-                btn.className = 'continue-btn';
-                btn.innerHTML = '<ion-icon name="arrow-forward-outline"></ion-icon> Continue to Payment';
-            }
-        }
+    // If cart is empty, disable button
+    if (this.cart.length === 0) {
+        btn.disabled = true;
+        btn.className = 'continue-btn';
+        btn.innerHTML = '<ion-icon name="bag-outline"></ion-icon> Add items to continue';
+        return;
     }
+
+    const total = this.getCalculatedTotal();
+    const cashReceived = this.cashReceived;
+
+    // STRICT CASH VALIDATION
+    if (cashReceived === 0 || cashReceived === null || isNaN(cashReceived)) {
+        // No cash entered - require cash input
+        btn.disabled = true;
+        btn.className = 'continue-btn no-cash';
+        btn.innerHTML = '<ion-icon name="cash-outline"></ion-icon> Enter cash amount';
+        return;
+    }
+
+    if (cashReceived < total) {
+        // Insufficient cash - show shortage
+        const shortage = total - cashReceived;
+        btn.disabled = true;
+        btn.className = 'continue-btn insufficient-cash';
+        btn.innerHTML = `<ion-icon name="warning-outline"></ion-icon> Need ₱${shortage.toFixed(2)} more`;
+        return;
+    }
+
+    // Sufficient cash - allow completion
+    btn.disabled = false;
+    btn.className = 'continue-btn complete-order';
+    btn.innerHTML = '<ion-icon name="checkmark-outline"></ion-icon> Complete Order';
+}
+
 
     updateDashboardStats(orderTotal) {
         // Do NOT update sales here during order calculation
@@ -599,21 +654,56 @@ class OrderManager {
     }
 
     openPaymentModal() {
-        if (this.cart.length === 0) return;
-
-        this.renderPaymentConfirmation();
-        this.resetPaymentForm();
-        
-        const modal = document.getElementById('paymentModal');
-        if (modal) {
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            
-            setTimeout(() => {
-                this.setupProofUpload();
-            }, 100);
-        }
+    if (this.cart.length === 0) {
+        this.showNotification('Your cart is empty. Add items first.', 'error');
+        return;
     }
+
+    const total = this.getCalculatedTotal();
+    const cashReceived = this.cashReceived;
+    
+    // STRICT VALIDATION - No cash entered
+    if (cashReceived === 0 || cashReceived === null || isNaN(cashReceived)) {
+        this.showNotification('Please enter the cash amount before proceeding to payment.', 'error');
+        
+        // Focus on cash input
+        const cashInput = document.getElementById('orderCashInput');
+        if (cashInput) {
+            cashInput.focus();
+            cashInput.style.borderColor = '#dc2626';
+            cashInput.style.backgroundColor = '#fef2f2';
+        }
+        return;
+    }
+    
+    // STRICT VALIDATION - Insufficient cash
+    if (cashReceived < total) {
+        const shortage = total - cashReceived;
+        this.showNotification(`Insufficient cash! You need ₱${shortage.toFixed(2)} more to complete this order.`, 'error');
+        
+        // Focus on cash input
+        const cashInput = document.getElementById('orderCashInput');
+        if (cashInput) {
+            cashInput.focus();
+            cashInput.select(); // Select all text for easy correction
+        }
+        return;
+    }
+
+    // All validations passed - proceed to payment
+    this.renderPaymentConfirmation();
+    this.resetPaymentForm();
+    
+    const modal = document.getElementById('paymentModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        setTimeout(() => {
+            this.setupProofUpload();
+        }, 100);
+    }
+}
 
     closePaymentModal() {
         const modal = document.getElementById('paymentModal');
@@ -844,61 +934,108 @@ class OrderManager {
     }
 
     processPayment() {
-        const selectedMethod = document.querySelector('.payment-method.selected');
-        if (!selectedMethod) {
-            this.showNotification('Please select a payment method', 'error');
+    const selectedMethod = document.querySelector('.payment-method.selected');
+    if (!selectedMethod) {
+        this.showNotification('Please select a payment method', 'error');
+        return;
+    }
+
+    const method = selectedMethod.dataset.method;
+    const total = this.getCalculatedTotal();
+
+    // CASH VALIDATION - Check if sufficient cash provided
+    if (method === 'cash') {
+        if (this.cashReceived < total) {
+            const shortage = total - this.cashReceived;
+            this.showNotification(`Insufficient cash! You need ₱${shortage.toFixed(2)} more to complete this order.`, 'error');
             return;
         }
-
-        const method = selectedMethod.dataset.method;
         
-        const confirmBtn = document.getElementById('confirmPayment');
-        if (confirmBtn) {
-            confirmBtn.disabled = true;
-            confirmBtn.innerHTML = '<ion-icon name="refresh-outline"></ion-icon> Processing...';
+        if (this.cashReceived === 0) {
+            this.showNotification('Please enter the cash amount received from customer.', 'error');
+            return;
         }
+    }
+    
+    const confirmBtn = document.getElementById('confirmPayment');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<ion-icon name="refresh-outline"></ion-icon> Processing...';
+    }
+    
+    if (method === 'gcash') {
+        const customerNameEl = document.getElementById('customerName');
+        const customerNumberEl = document.getElementById('customerNumber');
+        const proofOfPaymentEl = document.getElementById('proofOfPayment');
         
-        if (method === 'gcash') {
-            const customerNameEl = document.getElementById('customerName');
-            const customerNumberEl = document.getElementById('customerNumber');
-            const proofOfPaymentEl = document.getElementById('proofOfPayment');
+        if (customerNameEl && customerNumberEl && proofOfPaymentEl) {
+            const name = customerNameEl.value.trim();
+            const number = customerNumberEl.value.trim();
+            const hasProof = proofOfPaymentEl.files && proofOfPaymentEl.files[0];
             
-            if (customerNameEl && customerNumberEl && proofOfPaymentEl) {
-                const name = customerNameEl.value.trim();
-                const number = customerNumberEl.value.trim();
-                const hasProof = proofOfPaymentEl.files && proofOfPaymentEl.files[0];
-                
-                if (!name || !number) {
-                    this.showNotification('Please fill in customer name and GCash number', 'error');
-                    this.resetPaymentButton();
-                    return;
-                }
-                
-                if (!hasProof) {
-                    this.showNotification('Please upload proof of payment for GCash transactions', 'error');
-                    this.resetPaymentButton();
-                    return;
-                }
-                
-                this.gcashCustomerName = name;
-                this.gcashNumber = number;
-                this.gcashProofFile = proofOfPaymentEl.files[0];
-                
-                // Process image and store it for viewing
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.gcashProofOfPayment = e.target.result;
-                    // Store the image for this transaction
-                    this.proofImages.set(this.currentOrderNumber.toString(), e.target.result);
-                    this.completeOrder(method);
-                };
-                reader.readAsDataURL(proofOfPaymentEl.files[0]);
+            if (!name || !number) {
+                this.showNotification('Please fill in customer name and GCash number', 'error');
+                this.resetPaymentButton();
                 return;
             }
+            
+            if (!hasProof) {
+                this.showNotification('Please upload proof of payment for GCash transactions', 'error');
+                this.resetPaymentButton();
+                return;
+            }
+            
+            this.gcashCustomerName = name;
+            this.gcashNumber = number;
+            this.gcashProofFile = proofOfPaymentEl.files[0];
+            
+            // Process image and store it for viewing
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.gcashProofOfPayment = e.target.result;
+                this.tempProofImage = e.target.result;
+                this.completeOrder(method);
+            };
+            reader.readAsDataURL(proofOfPaymentEl.files[0]);
+            return;
         }
-
-        this.completeOrder(method);
     }
+
+    this.completeOrder(method);
+}
+handleCashChange() {
+    const cashInput = document.getElementById('orderCashInput');
+    const rawValue = cashInput.value.trim();
+    
+    // Handle empty input
+    if (rawValue === '' || rawValue === null) {
+        this.cashReceived = 0;
+    } else {
+        this.cashReceived = parseFloat(rawValue) || 0;
+    }
+    
+    const total = this.getCalculatedTotal();
+    
+    // Update cash input styling based on validation
+    if (cashInput) {
+        if (this.cashReceived === 0) {
+            // No cash entered
+            cashInput.style.borderColor = '#e2e8f0';
+            cashInput.style.backgroundColor = 'white';
+        } else if (this.cashReceived >= total) {
+            // Sufficient cash
+            cashInput.style.borderColor = '#10b981';
+            cashInput.style.backgroundColor = '#f0fdf4';
+        } else {
+            // Insufficient cash
+            cashInput.style.borderColor = '#dc2626';
+            cashInput.style.backgroundColor = '#fef2f2';
+        }
+    }
+    
+    this.calculateChange();
+    this.updateContinueButton(); // This will now properly validate
+}
 
     resetPaymentButton() {
         const confirmBtn = document.getElementById('confirmPayment');
@@ -908,41 +1045,177 @@ class OrderManager {
         }
     }
 
-    completeOrder(paymentMethod) {
-        console.log(`🎉 === COMPLETING ORDER ===`);
-        console.log(`Payment method: ${paymentMethod}`);
+// Replace your existing completeOrder method in order.js with this updated version
+
+async completeOrder(paymentMethod) {
+    console.log(`🎉 === COMPLETING ORDER ===`);
+    console.log(`Payment method: ${paymentMethod}`);
+    
+    try {
+        // Prepare order data
+        const orderData = {
+            items: this.cart.map(item => ({
+                product_id: item.id,
+                product_name: item.name,
+                product_price: item.price,
+                quantity: item.quantity
+            })),
+            subtotal: this.getCalculatedSubtotal(),
+            tax: this.getCalculatedSubtotal() * this.taxRate,
+            discount: this.manualDiscount,
+            total: this.getCalculatedTotal(),
+            payment_method: paymentMethod,
+            cash_received: this.cashReceived,
+            change_given: Math.max(0, this.cashReceived - this.getCalculatedTotal())
+        };
+
+        // Add customer info if selected
+        const customerSelect = document.getElementById('customerSelect');
+        if (customerSelect && customerSelect.value) {
+            orderData.customer_id = parseInt(customerSelect.value);
+        }
+
+        // Add GCash payment details
+        if (paymentMethod === 'gcash') {
+            orderData.gcash_customer_name = this.gcashCustomerName;
+            orderData.gcash_number = this.gcashNumber;
+            orderData.proof_of_payment = this.gcashProofOfPayment;
+        }
+
+        // Save order to database (this automatically deducts stock in the backend)
+        const response = await fetch('api/orders.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Order saved to database:', result.order_number);
+            
+            // 🔥 IMPORTANT: Deduct stock from frontend after successful database save
+            this.deductStockFromFrontend();
+            
+            // Update dashboard stats
+            this.updateActualSales(orderData.total, 1);
+            
+            // Clear cart and reset
+            this.cart = [];
+            
+            // INCREMENT the order number for the next order
+            this.currentOrderNumber++;
+            
+            this.updateOrderDetails();
+            
+            // Store proof image with the actual order ID from database
+            if (paymentMethod === 'gcash' && this.tempProofImage) {
+                this.proofImages.set(result.order.id.toString(), this.tempProofImage);
+                console.log(`📸 Stored proof image for order ID: ${result.order.id}`);
+                this.tempProofImage = null;
+            }
+            
+            // Reset payment data
+            this.gcashProofOfPayment = null;
+            this.gcashCustomerName = '';
+            this.gcashNumber = '';
+            this.gcashProofFile = null;
+            
+            // Close modals and show success
+            this.closePaymentModal();
+            this.showSuccessModal(paymentMethod);
+            
+            // 🔥 Reload products from database to get updated stock
+            await this.loadProducts();
+            this.renderProducts();
+            
+            // 🔥 Sync with product manager if it exists
+            if (window.productManager) {
+                await window.productManager.syncWithDatabase();
+            }
+            
+            // Trigger events
+            document.dispatchEvent(new CustomEvent('orderCompleted', {
+                detail: { 
+                    paymentMethod, 
+                    orderNumber: result.order_number,
+                    orderId: result.order.id
+                }
+            }));
+            
+        } else {
+            throw new Error(result.error || 'Failed to save order');
+        }
         
-        // Calculate final totals for actual sales
-        const orderTotal = this.getCalculatedTotal();
-        const orderCount = 1;
-        
-        // Update ACTUAL sales when order is completed
-        this.updateActualSales(orderTotal, orderCount);
-        
-        // Deduct stock for all items in the cart BEFORE completing the order
-        this.deductStock();
-        
-        this.addToTransactionHistory(paymentMethod);
-        
-        this.cart = [];
-        this.updateOrderDetails();
-        
-        this.gcashProofOfPayment = null;
-        this.gcashCustomerName = '';
-        this.gcashNumber = '';
-        this.gcashProofFile = null;
-        
-        this.currentOrderNumber++;
-        
-        this.closePaymentModal();
-        this.showSuccessModal(paymentMethod);
-        
-        document.dispatchEvent(new CustomEvent('orderCompleted', {
-            detail: { paymentMethod, orderNumber: this.currentOrderNumber - 1 }
-        }));
-        
-        console.log('✅ Order completed successfully!');
+    } catch (error) {
+        console.error('Error completing order:', error);
+        this.showNotification('Failed to complete order: ' + error.message, 'error');
+        this.resetPaymentButton();
     }
+}
+
+deductStockFromFrontend() {
+    console.log('🔄 Deducting stock from frontend...');
+    
+    // Update stock in the order manager's product list
+    this.cart.forEach(cartItem => {
+        const product = this.products.find(p => p.id === cartItem.id);
+        if (product) {
+            const originalStock = product.stock;
+            const orderedQuantity = cartItem.quantity;
+            const newStock = Math.max(0, originalStock - orderedQuantity);
+            
+            product.stock = newStock;
+            
+            console.log(`📦 Frontend Stock: ${product.name} | ${originalStock} → ${newStock} (ordered: ${orderedQuantity})`);
+            
+            if (newStock === 0) {
+                console.log(`🚨 ${product.name} is now OUT OF STOCK`);
+            } else if (newStock <= 5) {
+                console.log(`⚠️ ${product.name} is now LOW STOCK (${newStock} remaining)`);
+            }
+        }
+    });
+    
+    // Update the product manager if it exists
+    if (window.productManager) {
+        // Sync the stock with product manager
+        this.cart.forEach(cartItem => {
+            const pmProduct = window.productManager.products.find(p => p.id === cartItem.id);
+            if (pmProduct) {
+                pmProduct.stock = Math.max(0, pmProduct.stock - cartItem.quantity);
+            }
+        });
+        
+        // Re-render product manager UI
+        window.productManager.renderProducts();
+        window.productManager.updateDashboard();
+    }
+}
+
+// Add these methods to your OrderManager class in order.js
+
+async loadNextOrderNumber() {
+    try {
+        const response = await fetch('api/orders.php?action=next_order_number');
+        const result = await response.json();
+        
+        if (response.ok) {
+            this.currentOrderNumber = result.next_order_number;
+            console.log(`📋 Next order number loaded: ${this.currentOrderNumber}`);
+        } else {
+            console.error('Failed to load next order number:', result.error);
+            // Fallback: use timestamp-based order number
+            this.currentOrderNumber = Date.now();
+        }
+    } catch (error) {
+        console.error('Error loading next order number:', error);
+        // Fallback: use timestamp-based order number
+        this.currentOrderNumber = Date.now();
+    }
+}
 
     // NEW: Update actual sales only when orders are completed
     updateActualSales(orderTotal, orderCount) {
@@ -1385,331 +1658,6 @@ class OrderManager {
     }
 }
 
-// Dashboard Manager
-class DashboardManager {
-    constructor() {
-        this.init();
-    }
-
-    init() {
-        this.setupEventListeners();
-        this.showEmptyState();
-    }
-
-    setupEventListeners() {
-        const monthFilter = document.getElementById('monthFilter');
-        if (monthFilter) {
-            monthFilter.addEventListener('change', (e) => this.filterByMonth(e.target.value));
-        }
-
-        const searchInput = document.getElementById('searchTransactions');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => this.searchTransactions(e.target.value));
-        }
-
-        const refreshBtn = document.getElementById('refreshTransactions');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => this.refreshTransactions());
-        }
-    }
-
-    toggleTransactionDetails(button, transactionId) {
-        const detailsRow = document.getElementById(`details-${transactionId}`);
-        const icon = button.querySelector('ion-icon');
-        
-        if (!detailsRow) return;
-
-        if (detailsRow.classList.contains('active')) {
-            detailsRow.classList.remove('active');
-            button.classList.remove('active');
-            icon.setAttribute('name', 'chevron-down-outline');
-        } else {
-            detailsRow.classList.add('active');
-            button.classList.add('active');
-            icon.setAttribute('name', 'chevron-up-outline');
-        }
-    }
-
-    filterByMonth(monthValue) {
-        const allContainers = document.querySelectorAll('.table-body .table-row-container');
-        let visibleCount = 0;
-
-        allContainers.forEach(container => {
-            const dateAttr = container.getAttribute('data-date');
-            if (!monthValue || (dateAttr && dateAttr.startsWith(monthValue))) {
-                container.style.display = 'block';
-                visibleCount++;
-            } else {
-                container.style.display = 'none';
-            }
-        });
-
-        if (visibleCount === 0 && monthValue) {
-            this.showFilteredEmptyState(`No transactions found for ${this.getMonthName(monthValue)}`);
-        } else if (visibleCount === 0) {
-            this.showEmptyState();
-        } else {
-            this.hideEmptyState();
-        }
-    }
-
-    searchTransactions(query) {
-        const allContainers = document.querySelectorAll('.table-body .table-row-container');
-        let visibleCount = 0;
-
-        if (!query.trim()) {
-            allContainers.forEach(container => {
-                container.style.display = 'block';
-                visibleCount++;
-            });
-        } else {
-            allContainers.forEach(container => {
-                const row = container.querySelector('.table-row');
-                const searchText = row.textContent.toLowerCase();
-                
-                if (searchText.includes(query.toLowerCase())) {
-                    container.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    container.style.display = 'none';
-                }
-            });
-        }
-
-        if (visibleCount === 0 && query.trim()) {
-            this.showFilteredEmptyState(`No transactions found for "${query}"`);
-        } else if (visibleCount === 0) {
-            this.showEmptyState();
-        } else {
-            this.hideEmptyState();
-        }
-    }
-
-    refreshTransactions() {
-        const monthFilter = document.getElementById('monthFilter');
-        const searchInput = document.getElementById('searchTransactions');
-        
-        if (monthFilter) monthFilter.value = '';
-        if (searchInput) searchInput.value = '';
-
-        const allContainers = document.querySelectorAll('.table-body .table-row-container');
-        allContainers.forEach(container => {
-            container.style.display = 'block';
-            
-            const detailsRow = container.querySelector('.transaction-details');
-            const toggleBtn = container.querySelector('.details-toggle-btn');
-            if (detailsRow && detailsRow.classList.contains('active')) {
-                detailsRow.classList.remove('active');
-                toggleBtn.classList.remove('active');
-                toggleBtn.querySelector('ion-icon').setAttribute('name', 'chevron-down-outline');
-            }
-        });
-
-        this.hideEmptyState();
-        this.showNotification('Transactions refreshed!');
-    }
-
-    showEmptyState() {
-        this.hideEmptyState();
-        
-        const tableBody = document.getElementById('transactionTableBody');
-        if (!tableBody) return;
-
-        const emptyState = document.createElement('div');
-        emptyState.className = 'no-transactions';
-        emptyState.id = 'emptyState';
-        emptyState.innerHTML = `
-            <ion-icon name="receipt-outline"></ion-icon>
-            <h3>No transactions yet</h3>
-            <p>Start making sales to see transaction history here</p>
-        `;
-        
-        tableBody.appendChild(emptyState);
-    }
-
-    showFilteredEmptyState(message) {
-        this.hideEmptyState();
-        
-        const tableBody = document.getElementById('transactionTableBody');
-        if (!tableBody) return;
-
-        const emptyState = document.createElement('div');
-        emptyState.className = 'no-transactions';
-        emptyState.id = 'emptyState';
-        emptyState.innerHTML = `
-            <ion-icon name="search-outline"></ion-icon>
-            <h3>No results found</h3>
-            <p>${message}</p>
-        `;
-        
-        tableBody.appendChild(emptyState);
-    }
-
-    hideEmptyState() {
-        const emptyState = document.getElementById('emptyState');
-        if (emptyState) {
-            emptyState.remove();
-        }
-    }
-
-    getMonthName(monthValue) {
-        const months = {
-            '2024-01': 'January 2024', '2024-02': 'February 2024', '2024-03': 'March 2024',
-            '2024-04': 'April 2024', '2024-05': 'May 2024', '2024-06': 'June 2024',
-            '2024-07': 'July 2024', '2024-08': 'August 2024', '2024-09': 'September 2024',
-            '2024-10': 'October 2024', '2024-11': 'November 2024', '2024-12': 'December 2024',
-            '2025-01': 'January 2025', '2025-02': 'February 2025', '2025-03': 'March 2025',
-            '2025-04': 'April 2025', '2025-05': 'May 2025', '2025-06': 'June 2025'
-        };
-        return months[monthValue] || monthValue;
-    }
-
-    viewProofOfPayment(transactionId) {
-        // Get the stored proof image for this transaction
-        const proofImage = window.orderManager?.proofImages.get(transactionId);
-        
-        if (!proofImage) {
-            this.showNotification('Proof of payment not found', 'error');
-            return;
-        }
-
-        // Create modal for viewing image
-        this.showImageModal(proofImage);
-    }
-
-    showImageModal(imageSrc) {
-        // Remove existing modal if any
-        const existingModal = document.getElementById('imageViewerModal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-
-        // Create image viewer modal
-        const modal = document.createElement('div');
-        modal.id = 'imageViewerModal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 4000;
-            padding: 2rem;
-        `;
-
-        modal.innerHTML = `
-            <div style="position: relative; max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center;">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 1rem;">
-                    <h3 style="color: white; margin: 0; font-size: 1.25rem;">Proof of Payment</h3>
-                    <button onclick="document.getElementById('imageViewerModal').remove()" 
-                            style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                        <ion-icon name="close-outline" style="font-size: 24px;"></ion-icon>
-                    </button>
-                </div>
-                <img src="${imageSrc}" alt="Proof of Payment" 
-                     style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);">
-                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                    <button onclick="window.open('${imageSrc}', '_blank')" 
-                            style="background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                        <ion-icon name="open-outline"></ion-icon>
-                        Open Full Size
-                    </button>
-                    <button onclick="dashboardManager.downloadImage('${imageSrc}')" 
-                            style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                        <ion-icon name="download-outline"></ion-icon>
-                        Download
-                    </button>
-                </div>
-            </div>
-        `;
-
-        // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-
-        // Close modal with Escape key
-        document.addEventListener('keydown', function escapeHandler(e) {
-            if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', escapeHandler);
-            }
-        });
-
-        document.body.appendChild(modal);
-        document.body.style.overflow = 'hidden';
-        
-        // Restore body overflow when modal is removed
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList' && !document.getElementById('imageViewerModal')) {
-                    document.body.style.overflow = 'auto';
-                    observer.disconnect();
-                }
-            });
-        });
-        observer.observe(document.body, { childList: true });
-    }
-
-    downloadImage(imageSrc) {
-        const link = document.createElement('a');
-        link.href = imageSrc;
-        link.download = `proof_of_payment_${new Date().getTime()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        this.showNotification('Image downloaded successfully!');
-    }
-
-    showNotification(message, type = 'success') {
-        const existing = document.querySelector('.notification');
-        if (existing) existing.remove();
-
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <div class="notification-content">
-                <ion-icon name="${type === 'success' ? 'checkmark-circle-outline' : 'alert-circle-outline'}"></ion-icon>
-                <span>${message}</span>
-            </div>
-        `;
-
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            border-radius: 8px;
-            padding: 1rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-left: 4px solid ${type === 'success' ? '#10b981' : '#ef4444'};
-            z-index: 3000;
-            animation: slideIn 0.3s ease;
-        `;
-
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-    }
-}
-
-// Initialize managers when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.dashboardManager = new DashboardManager();
-    
-    if (document.getElementById('itemsGrid')) {
-        window.orderManager = new OrderManager();
-        console.log('Order Management System initialized successfully!');
-    }
-    
-    console.log('Dashboard Manager initialized successfully!');
-});
-
 // Global function to refresh order catalog
 window.refreshOrderCatalog = function() {
     if (window.orderManager) {
@@ -1718,4 +1666,23 @@ window.refreshOrderCatalog = function() {
         window.orderManager.renderProducts();
         console.log('Order catalog refreshed!');
     }
+    
 };
+// Initialize OrderManager - THIS SHOULD BE IN ORDER.JS
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔍 DOM loaded, checking for order page elements...');
+    
+    const itemsGrid = document.getElementById('itemsGrid');
+    
+    if (itemsGrid) {
+        console.log('✅ Initializing OrderManager...');
+        try {
+            window.orderManager = new OrderManager();
+            console.log('🎉 Order Management System initialized successfully!');
+        } catch (error) {
+            console.error('❌ Error initializing OrderManager:', error);
+        }
+    } else {
+        console.log('❌ itemsGrid not found, skipping OrderManager initialization');
+    }
+});

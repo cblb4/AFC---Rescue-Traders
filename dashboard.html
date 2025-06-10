@@ -145,117 +145,117 @@
             </div>
 
             <!-- Orders Page -->
-            <div id="orders-page" class="page">
-                <!-- Order Header -->
-                <div class="order-header">
-                    <h1>Order</h1>
-                </div>
+<div id="orders-page" class="page">
+    <!-- Order Header -->
+    <div class="order-header">
+        <h1>Order</h1>
+    </div>
 
-                <!-- Category Toolbar -->
-                <div class="order-toolbar">
-                    <div class="toolbar-categories" id="categoryTabs">
-                        <!-- Category tabs will be dynamically generated -->
-                    </div>
-                    <div class="search-box">
-                        <ion-icon name="search-outline" class="search-icon"></ion-icon>
-                        <input type="text" placeholder="Search items">
-                    </div>
-                </div>
+    <!-- Category Toolbar -->
+    <div class="order-toolbar">
+        <div class="toolbar-categories" id="categoryTabs">
+            <!-- Category tabs will be dynamically generated -->
+        </div>
+        <div class="search-box">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input type="text" placeholder="Search items">
+        </div>
+    </div>
 
-                <!-- Main Order Content -->
-                <div class="order-content">
-                    <!-- Items Section -->
-                    <div class="items-section">
-                        <div class="items-header">
-                            <h2>Items</h2>
-                        </div>
-                        <div class="items-grid" id="itemsGrid">
-                            <!-- Items will be dynamically generated -->
-                        </div>
-                    </div>
+    <!-- Main Order Content -->
+    <div class="order-content">
+        <!-- Items Section -->
+        <div class="items-section">
+            <div class="items-header">
+                <h2>Items</h2>
+            </div>
+            <div class="items-grid" id="itemsGrid">
+                <!-- Items will be dynamically generated -->
+            </div>
+        </div>
 
-                    <!-- Order Details -->
-                    <div class="order-details">
-                        <div class="order-details-header">
-                            <h3>Order Details</h3>
-                            <div class="order-number">Orders #0</div>
-                        </div>
-                        
-                        <!-- Customer Selection -->
-                        <div class="customer-dropdown">
-                            <select id="customerSelect" class="customer-select">
-                                <option value="">Select Customer</option>
-                            </select>
-                        </div>
-                        
-                        <div class="order-items" id="orderItems">
-                            <div class="empty-order">
-                                <ion-icon name="bag-outline"></ion-icon>
-                                <h3>Your order is empty</h3>
-                                <p>Add items to get started</p>
-                            </div>
-                        </div>
-
-                        <div class="order-summary enhanced">
-                            <!-- Calculator Inputs -->
-                            <div class="summary-inputs">
-                                <!-- Subtotal (readonly) -->
-                                <div class="summary-row input-row subtotal">
-                                    <ion-icon name="receipt-outline" class="summary-icon"></ion-icon>
-                                    <input type="number" class="summary-input" id="orderSubtotalInput" placeholder="₱ 0" readonly>
-                                </div>
-
-                                <!-- Tax (readonly) -->
-                                <div class="summary-row input-row tax">
-                                    <ion-icon name="document-outline" class="summary-icon"></ion-icon>
-                                    <input type="number" class="summary-input" id="orderTaxInput" placeholder="₱ 0" readonly>
-                                </div>
-
-                                <!-- Discount (editable) -->
-                                <div class="summary-row input-row discount">
-                                    <ion-icon name="pricetag-outline" class="summary-icon"></ion-icon>
-                                    <input type="number" class="summary-input editable" id="orderDiscountInput" placeholder="Discount" step="0.01">
-                                </div>
-
-                                <!-- Total (readonly) -->
-                                <div class="summary-row input-row total">
-                                    <ion-icon name="calculator-outline" class="summary-icon"></ion-icon>
-                                    <input type="number" class="summary-input" id="orderTotalInput" placeholder="₱ 0" readonly>
-                                </div>
-                            </div>
-
-                            <!-- Payment Calculator -->
-                            <div class="payment-calculator">
-                                <!-- Cash Received (editable) -->
-                                <div class="summary-row input-row cash">
-                                    <ion-icon name="cash-outline" class="summary-icon"></ion-icon>
-                                    <input type="number" class="summary-input editable" id="orderCashInput" placeholder="Cash Received" step="0.01">
-                                </div>
-
-                                <!-- Change (readonly) -->
-                                <div class="summary-row input-row change">
-                                    <ion-icon name="swap-horizontal-outline" class="summary-icon"></ion-icon>
-                                    <input type="number" class="summary-input" id="orderChangeInput" placeholder="₱ 0" readonly>
-                                </div>
-                            </div>
-
-                            <!-- Calculator Actions -->
-                            <div class="calculator-actions">
-                                <button class="clear-calculator-btn" id="clearCalculatorBtn">
-                                    <ion-icon name="refresh-outline"></ion-icon>
-                                    Clear
-                                </button>
-                            </div>
-
-                            <!-- Continue Button -->
-                            <button class="continue-btn" id="continueToPayment" disabled>
-                                <ion-icon name="bag-outline"></ion-icon>
-                                Add items to continue
-                            </button>
-                        </div>
-                    </div>
+        <!-- Order Details -->
+        <div class="order-details">
+            <div class="order-details-header">
+                <h3>Order Details</h3>
+                <div class="order-number">Orders #0</div>
+            </div>
+            
+            <!-- Customer Selection -->
+            <div class="customer-dropdown">
+                <select id="customerSelect" class="customer-select">
+                    <option value="">Select Customer</option>
+                </select>
+            </div>
+            
+            <div class="order-items" id="orderItems">
+                <div class="empty-order">
+                    <ion-icon name="bag-outline"></ion-icon>
+                    <h3>Your order is empty</h3>
+                    <p>Add items to get started</p>
                 </div>
             </div>
+
+            <div class="order-summary enhanced">
+                <!-- Calculator Inputs -->
+                <div class="summary-inputs">
+                    <!-- Subtotal (readonly) -->
+                    <div class="summary-row input-row subtotal">
+                        <ion-icon name="receipt-outline" class="summary-icon"></ion-icon>
+                        <input type="number" class="summary-input" id="orderSubtotalInput" placeholder="₱ 0" readonly>
+                    </div>
+
+                    <!-- Tax (readonly) -->
+                    <div class="summary-row input-row tax">
+                        <ion-icon name="document-outline" class="summary-icon"></ion-icon>
+                        <input type="number" class="summary-input" id="orderTaxInput" placeholder="₱ 0" readonly>
+                    </div>
+
+                    <!-- Discount (editable) -->
+                    <div class="summary-row input-row discount">
+                        <ion-icon name="pricetag-outline" class="summary-icon"></ion-icon>
+                        <input type="number" class="summary-input editable" id="orderDiscountInput" placeholder="Discount" step="0.01">
+                    </div>
+
+                    <!-- Total (readonly) -->
+                    <div class="summary-row input-row total">
+                        <ion-icon name="calculator-outline" class="summary-icon"></ion-icon>
+                        <input type="number" class="summary-input" id="orderTotalInput" placeholder="₱ 0" readonly>
+                    </div>
+                </div>
+
+                <!-- Payment Calculator -->
+                <div class="payment-calculator">
+                    <!-- Cash Received (editable) -->
+                    <div class="summary-row input-row cash">
+                        <ion-icon name="cash-outline" class="summary-icon"></ion-icon>
+                        <input type="number" class="summary-input editable" id="orderCashInput" placeholder="Cash Received" step="0.01">
+                    </div>
+
+                    <!-- Change (readonly) -->
+                    <div class="summary-row input-row change">
+                        <ion-icon name="swap-horizontal-outline" class="summary-icon"></ion-icon>
+                        <input type="number" class="summary-input" id="orderChangeInput" placeholder="₱ 0" readonly>
+                    </div>
+                </div>
+
+                <!-- Calculator Actions -->
+                <div class="calculator-actions">
+                    <button class="clear-calculator-btn" id="clearCalculatorBtn">
+                        <ion-icon name="refresh-outline"></ion-icon>
+                        Clear
+                    </button>
+                </div>
+
+                <!-- Continue Button -->
+                <button class="continue-btn" id="continueToPayment" disabled>
+                    <ion-icon name="bag-outline"></ion-icon>
+                    Add items to continue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
             <!-- Products Page -->
             <div id="products-page" class="page">

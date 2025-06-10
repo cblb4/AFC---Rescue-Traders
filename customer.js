@@ -7,11 +7,30 @@ class CustomerManager {
     }
 
     // Initialize the customer manager
-    init() {
-        this.setupEventListeners();
-        this.renderCustomers();
-        console.log('Customer Manager initialized - Memory only, no persistence');
+async init() {
+    this.setupEventListeners();
+    await this.loadCustomers(); // Load from database
+    console.log('Customer Manager initialized with database connection');
+}
+// NEW: Load customers from database
+async loadCustomers() {
+    try {
+        const response = await fetch('api/customers.php');
+        const result = await response.json();
+        
+        if (response.ok) {
+            this.customers = result.customers || [];
+            this.renderCustomers();
+            this.updateCounts();
+            console.log(`👥 Loaded ${this.customers.length} customers from database`);
+        } else {
+            this.showNotification('Failed to load customers: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error loading customers:', error);
+        this.showNotification('Network error loading customers', 'error');
     }
+}
 
     // Setup all event listeners
     setupEventListeners() {
@@ -256,27 +275,35 @@ class CustomerManager {
     }
 
     // Save customer (memory only)
-    saveCustomer(formData) {
-        if (this.currentEditId) {
-            // Update existing customer
-            const index = this.customers.findIndex(c => c.id === this.currentEditId);
-            if (index !== -1) {
-                this.customers[index] = { ...this.customers[index], ...formData };
-                this.showNotification('Customer updated successfully!');
-            }
+async saveCustomer(formData) {
+    try {
+        const method = this.currentEditId ? 'PUT' : 'POST';
+        const url = this.currentEditId 
+            ? `api/customers.php?id=${this.currentEditId}`
+            : 'api/customers.php';
+            
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            this.showNotification(result.message);
+            await this.loadCustomers(); // Reload from database
+            this.closeModal();
         } else {
-            // Add new customer
-            const newCustomer = {
-                id: this.generateId(),
-                ...formData
-            };
-            this.customers.push(newCustomer);
-            this.showNotification('Customer added successfully!');
+            this.showNotification(result.error, 'error');
         }
-
-        this.renderCustomers();
-        this.closeModal();
+    } catch (error) {
+        console.error('Error saving customer:', error);
+        this.showNotification('Network error saving customer', 'error');
     }
+}
 
     // Edit customer
     editCustomer(id) {
@@ -313,14 +340,28 @@ class CustomerManager {
     }
 
     // Confirm delete
-    confirmDelete() {
-        if (this.currentEditId) {
-            this.customers = this.customers.filter(c => c.id !== this.currentEditId);
-            this.renderCustomers();
-            this.showNotification('Customer deleted successfully!');
+async confirmDelete() {
+    if (!this.currentEditId) return;
+    
+    try {
+        const response = await fetch(`api/customers.php?id=${this.currentEditId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            this.showNotification(result.message);
+            await this.loadCustomers(); // Reload from database
             this.closeDeleteModal();
+        } else {
+            this.showNotification(result.error, 'error');
         }
+    } catch (error) {
+        console.error('Error deleting customer:', error);
+        this.showNotification('Network error deleting customer', 'error');
     }
+}
 
     // Search customers
     searchCustomers(query) {

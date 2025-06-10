@@ -35,6 +35,10 @@ body {
     flex-direction: column;
     height: 100%;
 }
+.delete-transaction-btn:hover {
+    background: #fecaca !important;
+    transform: translateY(-1px);
+}
 
 /* Logo */
 .logo {

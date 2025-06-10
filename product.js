@@ -7,11 +7,30 @@ class ProductManager {
     }
 
     // Initialize the product manager
-    init() {
-        this.setupEventListeners();
-        this.renderProducts();
-        console.log('Product Manager initialized - Memory only, no persistence');
+async init() {
+    this.setupEventListeners();
+    await this.loadProducts(); // Load from database
+    console.log('Product Manager initialized with database connection');
+}
+// NEW: Load products from database
+async loadProducts() {
+    try {
+        const response = await fetch('api/products.php');
+        const result = await response.json();
+        
+        if (response.ok) {
+            this.products = result.products || [];
+            this.renderProducts();
+            this.updateCounts();
+            console.log(`📦 Loaded ${this.products.length} products from database`);
+        } else {
+            this.showNotification('Failed to load products: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error loading products:', error);
+        this.showNotification('Network error loading products', 'error');
     }
+}
 
     // Setup all event listeners
     setupEventListeners() {
@@ -461,29 +480,36 @@ class ProductManager {
     }
 
     // Save product (memory only)
-    saveProduct(formData) {
-        if (this.currentEditId) {
-            // Update existing product
-            const index = this.products.findIndex(p => p.id === this.currentEditId);
-            if (index !== -1) {
-                this.products[index] = { ...this.products[index], ...formData };
-                this.showNotification('Product updated successfully!');
-            }
+   async saveProduct(formData) {
+    try {
+        const method = this.currentEditId ? 'PUT' : 'POST';
+        const url = this.currentEditId 
+            ? `api/products.php?id=${this.currentEditId}`
+            : 'api/products.php';
+            
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            this.showNotification(result.message);
+            await this.loadProducts(); // Reload from database
+            this.triggerSyncEvents();
+            this.closeModal();
         } else {
-            // Add new product
-            const newProduct = {
-                id: this.generateId(),
-                ...formData
-            };
-            this.products.push(newProduct);
-            this.showNotification('Product added successfully!');
+            this.showNotification(result.error, 'error');
         }
-
-        // Trigger sync events (no localStorage)
-        this.triggerSyncEvents();
-        this.renderProducts();
-        this.closeModal();
+    } catch (error) {
+        console.error('Error saving product:', error);
+        this.showNotification('Network error saving product', 'error');
     }
+}
 
     // Trigger sync events for cross-component communication
     triggerSyncEvents() {
@@ -530,15 +556,29 @@ class ProductManager {
     }
 
     // Confirm delete
-    confirmDelete() {
-        if (this.currentEditId) {
-            this.products = this.products.filter(p => p.id !== this.currentEditId);
+async confirmDelete() {
+    if (!this.currentEditId) return;
+    
+    try {
+        const response = await fetch(`api/products.php?id=${this.currentEditId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            this.showNotification(result.message);
+            await this.loadProducts(); // Reload from database
             this.triggerSyncEvents();
-            this.renderProducts();
-            this.showNotification('Product deleted successfully!');
             this.closeDeleteModal();
+        } else {
+            this.showNotification(result.error, 'error');
         }
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        this.showNotification('Network error deleting product', 'error');
     }
+}
 
     // Search products
     searchProducts(query) {

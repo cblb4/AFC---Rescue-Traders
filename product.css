@@ -638,3 +638,17 @@
         font-size: 0.875rem;
     }
 }
+
+/* Continue button states */
+.continue-btn.insufficient-cash {
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+    border: 2px solid #dc2626 !important;
+    cursor: not-allowed !important;
+    animation: shake 0.5s ease-in-out;
+}
+
+.continue-btn.insufficient-cash:hover {
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+}
