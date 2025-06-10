@@ -1,0 +1,497 @@
+/* Customer Management Styles */
+
+/* Customer Header */
+.customers-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.add-customer-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+.add-customer-btn:hover {
+    background: #2563eb;
+}
+
+/* Customer Toolbar */
+.customers-toolbar {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.customers-count {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+/* Customer Grid */
+.customers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.customer-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.customer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.customer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.customer-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-right: 1rem;
+}
+
+.customer-info {
+    flex: 1;
+}
+
+.customer-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.customer-id {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.customer-contact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.customer-contact ion-icon {
+    font-size: 16px;
+}
+
+.customer-address {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.customer-address ion-icon {
+    font-size: 16px;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+.customer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn-small {
+    padding: 0.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 32px;
+    height: 32px;
+}
+
+.btn-edit {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-edit:hover {
+    background: #e5e7eb;
+}
+
+.btn-delete {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.btn-delete:hover {
+    background: #fecaca;
+}
+
+/* Customer Modal Styles */
+.customer-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.customer-modal.active {
+    display: flex;
+}
+
+.customer-modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.customer-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.customer-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.customer-modal-body {
+    padding: 1.5rem;
+}
+
+.customer-form-group {
+    margin-bottom: 1rem;
+}
+
+.customer-form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+.customer-form-group input,
+.customer-form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.customer-form-group input:focus,
+.customer-form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.customer-form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.customer-modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+/* Customer Empty State */
+.customer-empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #9ca3af;
+    grid-column: 1 / -1;
+}
+
+.customer-empty-state ion-icon {
+    font-size: 64px;
+    margin-bottom: 1rem;
+}
+
+.customer-empty-state h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #6b7280;
+}
+
+.customer-empty-state p {
+    font-size: 0.875rem;
+}
+
+/* Customer Dropdown in Order */
+.customer-dropdown {
+    margin-bottom: 1rem;
+}
+
+.customer-dropdown label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+.customer-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: white;
+    transition: border-color 0.2s ease;
+}
+
+.customer-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Print Receipt Button */
+.print-receipt-btn {
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    margin-left: 0.5rem;
+}
+
+.print-receipt-btn:hover {
+    background: #7c3aed;
+    transform: translateY(-1px);
+}
+
+/* Receipt Styles for Printing */
+.receipt {
+    display: none;
+    width: 300px;
+    margin: 0 auto;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.receipt-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px dashed #000;
+    padding-bottom: 1rem;
+}
+
+.receipt-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.receipt-subtitle {
+    font-size: 10px;
+    margin-bottom: 0.25rem;
+}
+
+.receipt-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    font-size: 10px;
+}
+
+.receipt-customer {
+    margin-bottom: 1rem;
+    font-size: 10px;
+}
+
+.receipt-items {
+    margin-bottom: 1rem;
+}
+
+.receipt-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.receipt-item-name {
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.receipt-summary {
+    border-top: 1px dashed #000;
+    padding-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.receipt-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.receipt-total {
+    font-weight: bold;
+    border-top: 1px solid #000;
+    padding-top: 0.25rem;
+}
+
+.receipt-footer {
+    text-align: center;
+    margin-top: 1rem;
+    border-top: 1px dashed #000;
+    padding-top: 1rem;
+    font-size: 10px;
+}
+
+/* Print-specific styles */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    
+    .receipt, .receipt * {
+        visibility: visible;
+    }
+    
+    .receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: block !important;
+        width: 100%;
+        max-width: none;
+    }
+    
+    @page {
+        size: 80mm auto;
+        margin: 0;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .customers-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .customers-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar-left {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .customers-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .customer-modal-header,
+    .customer-modal-body,
+    .customer-modal-footer {
+        padding: 1rem;
+    }
+
+    .customer-modal-footer {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .customer-card {
+        padding: 1rem;
+    }
+
+    .customer-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .customer-actions {
+        flex-direction: row;
+        margin-top: 1rem;
+    }
+}
