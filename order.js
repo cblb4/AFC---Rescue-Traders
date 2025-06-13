@@ -1131,11 +1131,8 @@ async completeOrder(paymentMethod) {
 await this.loadProducts();
 this.renderProducts();
 
-// 🔥 Sync with product manager if it exists
-if (window.productManager) {
-    await window.productManager.loadProducts();
-    window.productManager.renderProducts();
-}
+await window.productManager.loadProducts();
+window.productManager.renderProducts();
             
             // Trigger events
             document.dispatchEvent(new CustomEvent('orderCompleted', {
