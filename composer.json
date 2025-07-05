@@ -1,0 +1,13 @@
+{
+    "name": "afc-rescue-traders/app",
+    "description": "AFC Rescue Traders Application",
+    "type": "project",
+    "require": {
+        "php": "^8.1",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*"
+    },
+    "scripts": {
+        "start": "php -S 0.0.0.0:$PORT index.php"
+    }
+}
