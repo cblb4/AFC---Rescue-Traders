@@ -45,7 +45,7 @@ function sendResponse($data, $statusCode = 200) {
 }
 
 function getJSONInput() {
-    input = file_get_contents('php://input');
+    $input = file_get_contents('php://input');  // Fixed: Added missing $
     return json_decode($input, true);
 }
 
