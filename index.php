@@ -1,34 +1,38 @@
 <?php
-// index.php - Main entry point for Railway deployment
+// Simple index.php for Railway
 
-// Check if this is an API request
-$request_uri = $_SERVER['REQUEST_URI'];
+// Basic routing
+$request_uri = $_SERVER['REQUEST_URI'] ?? '/';
 $path = parse_url($request_uri, PHP_URL_PATH);
 
-// Route API requests to appropriate PHP files
+// Handle API requests
 if (strpos($path, '/api/') === 0) {
-    $api_file = substr($path, 5); // Remove '/api/' prefix
-    $api_file = rtrim($api_file, '/') . '.php';
-    
-    $file_path = __DIR__ . '/api/' . $api_file;
+    $api_file = ltrim($path, '/');
+    $file_path = __DIR__ . '/' . $api_file;
     
     if (file_exists($file_path)) {
         include $file_path;
         exit;
     } else {
         http_response_code(404);
+        header('Content-Type: application/json');
         echo json_encode(['error' => 'API endpoint not found']);
         exit;
     }
 }
 
-// Serve static files or main dashboard
+// Serve main dashboard
 if ($path === '/' || $path === '/dashboard' || $path === '/dashboard.html') {
-    include 'dashboard.html';
-    exit;
+    if (file_exists(__DIR__ . '/dashboard.html')) {
+        include __DIR__ . '/dashboard.html';
+        exit;
+    } else {
+        echo "Dashboard file not found";
+        exit;
+    }
 }
 
-// Handle other static files
+// Handle static files
 $file_path = __DIR__ . $path;
 if (file_exists($file_path) && is_file($file_path)) {
     $mime_type = mime_content_type($file_path);
@@ -37,7 +41,13 @@ if (file_exists($file_path) && is_file($file_path)) {
     exit;
 }
 
-// Default fallback
+// Test endpoint
+if ($path === '/test') {
+    echo "PHP is working on Railway!";
+    exit;
+}
+
+// Default 404
 http_response_code(404);
 echo "404 - Page not found";
 ?>
