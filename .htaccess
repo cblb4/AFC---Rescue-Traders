@@ -1,0 +1,13 @@
+RewriteEngine On
+
+# Redirect root to dashboard.html
+RewriteRule ^$ dashboard.html [L]
+RewriteRule ^index\.php$ dashboard.html [L]
+
+# Handle API routes
+RewriteRule ^api/(.*)$ api/$1 [L]
+
+# Handle static files
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ dashboard.html [L]

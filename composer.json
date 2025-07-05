@@ -1,19 +1,5 @@
 {
-  "name": "afc-rescue-traders/pos-system",
-  "description": "AFC Rescue Traders POS System",
-  "type": "project",
   "require": {
-    "php": ">=8.0"
-  },
-  "scripts": {
-    "post-install-cmd": [
-      "php -v"
-    ]
-  },
-  "config": {
-    "optimize-autoloader": true,
-    "platform": {
-      "php": "8.1"
-    }
+    "php": "^8.1"
   }
 }
