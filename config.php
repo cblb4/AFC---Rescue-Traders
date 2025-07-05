@@ -1,5 +1,5 @@
 <?php
-// config.php - Database configuration
+// config.php - Database configuration for Railway
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -11,15 +11,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-define('DB_HOST', 'localhost');
-define('DB_USERNAME', 'root');
-define('DB_PASSWORD', '');
-define('DB_NAME', 'afc_rescue_traders');
+// Railway MySQL connection using environment variables
+define('DB_HOST', $_ENV['MYSQLHOST'] ?? 'localhost');
+define('DB_USERNAME', $_ENV['MYSQLUSER'] ?? 'root');
+define('DB_PASSWORD', $_ENV['MYSQLPASSWORD'] ?? '');
+define('DB_NAME', $_ENV['MYSQLDATABASE'] ?? 'afc_rescue_traders');
+define('DB_PORT', $_ENV['MYSQLPORT'] ?? '3306');
 
 function getDBConnection() {
     try {
         $pdo = new PDO(
-            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+            "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4",
             DB_USERNAME,
             DB_PASSWORD,
             [
@@ -43,7 +45,7 @@ function sendResponse($data, $statusCode = 200) {
 }
 
 function getJSONInput() {
-    $input = file_get_contents('php://input');
+    input = file_get_contents('php://input');
     return json_decode($input, true);
 }
 
