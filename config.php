@@ -1,5 +1,5 @@
 <?php
-// config.php - Railway Production Version
+// config.php - Database configuration
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -11,19 +11,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Railway Database Configuration
-// Railway will provide these as environment variables
-define('DB_HOST', $_ENV['MYSQL_HOST'] ?? 'localhost');
-define('DB_USERNAME', $_ENV['MYSQL_USER'] ?? 'root');
-define('DB_PASSWORD', $_ENV['MYSQL_PASSWORD'] ?? '');
-define('DB_NAME', $_ENV['MYSQL_DATABASE'] ?? 'afc_rescue_traders');
-define('DB_PORT', $_ENV['MYSQL_PORT'] ?? '3306');
+define('DB_HOST', 'localhost');
+define('DB_USERNAME', 'root');
+define('DB_PASSWORD', '');
+define('DB_NAME', 'afc_rescue_traders');
 
 function getDBConnection() {
     try {
-        $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
         $pdo = new PDO(
-            $dsn,
+            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
             DB_USERNAME,
             DB_PASSWORD,
             [
@@ -40,7 +36,6 @@ function getDBConnection() {
     }
 }
 
-// Rest of your functions stay the same...
 function sendResponse($data, $statusCode = 200) {
     http_response_code($statusCode);
     echo json_encode($data);
