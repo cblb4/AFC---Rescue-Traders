@@ -1,7 +1,7 @@
 <?php
 // api/products.php - Products API endpoints
 
-require_once __DIR__ . '/../config.php';
+require_once '../config.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $pdo = getDBConnection();
